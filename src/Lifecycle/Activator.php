@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect\Lifecycle;
 
+use WpOAuthConnect\Hooks\RoutingHooks;
 use WpOAuthConnect\Migrations\Migrator;
 
 final class Activator
@@ -21,6 +22,7 @@ final class Activator
         }
 
         Migrator::run();
+        RoutingHooks::registerRewriteRules();
         \flush_rewrite_rules();
     }
 }
