@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace WpOAuthConnect\Hooks;
 
 use WpOAuthConnect\Options\Settings;
+use WpOAuthConnect\Plugin;
 
 final class OAuthHooks
 {
@@ -18,7 +19,7 @@ final class OAuthHooks
 
     public function handleStart(string $provider): void
     {
-        if (!Settings::isProviderOperational($provider)) {
+        if (!Settings::isProviderOperational($provider) || !Plugin::registry()->has($provider)) {
             $this->sendUnavailable($provider);
             return;
         }
@@ -36,7 +37,7 @@ final class OAuthHooks
 
     public function handleCallback(string $provider): void
     {
-        if (!Settings::isProviderOperational($provider)) {
+        if (!Settings::isProviderOperational($provider) || !Plugin::registry()->has($provider)) {
             $this->sendUnavailable($provider);
             return;
         }
