@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect\Hooks;
 
+use WpOAuthConnect\Options\CustomProviderSettings;
 use WpOAuthConnect\Options\Settings;
 
 final class AdminHooks
@@ -79,6 +80,61 @@ final class AdminHooks
                 ],
             );
         }
+
+        $this->registerProviderCredentialSettings(CustomProviderSettings::SLUG);
+
+        \register_setting(
+            'wp_oauth_connect',
+            CustomProviderSettings::LABEL_OPTION,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static fn (mixed $value): string => \sanitize_text_field((string) $value),
+                'default'           => '',
+            ],
+        );
+
+        \register_setting(
+            'wp_oauth_connect',
+            CustomProviderSettings::ICON_TEXT_OPTION,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static function (mixed $value): string {
+                    $text = \sanitize_text_field((string) $value);
+                    return \mb_substr($text, 0, 3);
+                },
+                'default'           => '',
+            ],
+        );
+
+        \register_setting(
+            'wp_oauth_connect',
+            CustomProviderSettings::ICON_HTML_OPTION,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static fn (mixed $value): string => CustomProviderSettings::sanitizeIconHtml((string) $value),
+                'default'           => '',
+            ],
+        );
+
+        \register_setting(
+            'wp_oauth_connect',
+            CustomProviderSettings::ISSUER_OPTION,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static fn (mixed $value): string => \esc_url_raw(\trim((string) $value)),
+                'default'           => '',
+            ],
+        );
+
+        \register_setting(
+            'wp_oauth_connect',
+            CustomProviderSettings::SCOPES_OPTION,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static fn (mixed $value): string => \sanitize_text_field((string) $value),
+                'default'           => CustomProviderSettings::DEFAULT_SCOPES,
+            ],
+        );
 
         \register_setting(
             'wp_oauth_connect',
@@ -290,6 +346,8 @@ final class AdminHooks
                     </div>
                 <?php endforeach; ?>
 
+                <?php $this->renderCustomProviderSection(); ?>
+
                 <h2 style="margin-top: 2em;"><?php echo \esc_html__('Login button order', 'wp-oauth-connect'); ?></h2>
                 <p>
                     <label for="woc-login-button-order">
@@ -302,12 +360,12 @@ final class AdminHooks
                     id="woc-login-button-order"
                     name="<?php echo \esc_attr(Settings::LOGIN_BUTTON_ORDER_OPTION); ?>"
                     value="<?php echo \esc_attr($buttonOrder); ?>"
-                    placeholder="linkedin, google, github"
+                    placeholder="linkedin, google, github, custom"
                 />
                 <p class="description">
                     <?php
                     echo \esc_html__(
-                        'Controls the order of OAuth buttons on login and join pages. Only providers with credentials configured and enabled appear.',
+                        'Controls the order of OAuth buttons on login and join pages. Use slug custom for the custom provider below. Only operational providers appear.',
                         'wp-oauth-connect',
                     );
                     ?>
@@ -341,6 +399,228 @@ final class AdminHooks
 
                 <?php \submit_button(); ?>
             </form>
+        </div>
+        <?php
+    }
+
+    private function registerProviderCredentialSettings(string $slug): void
+    {
+        \register_setting(
+            'wp_oauth_connect',
+            Settings::providerEnabledOptionKey($slug),
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static fn (mixed $value): string => $value === '1' ? '1' : '0',
+                'default'           => '0',
+            ],
+        );
+
+        \register_setting(
+            'wp_oauth_connect',
+            Settings::providerClientIdOptionKey($slug),
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static function (mixed $value) use ($slug): string {
+                    if (Settings::providerCredentialsFromWpConfig($slug)) {
+                        return (string) \get_option(Settings::providerClientIdOptionKey($slug), '');
+                    }
+
+                    return \sanitize_text_field((string) $value);
+                },
+                'default'           => '',
+            ],
+        );
+
+        \register_setting(
+            'wp_oauth_connect',
+            Settings::providerClientSecretOptionKey($slug),
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static function (mixed $value) use ($slug): string {
+                    if (Settings::providerCredentialsFromWpConfig($slug)) {
+                        return (string) \get_option(Settings::providerClientSecretOptionKey($slug), '');
+                    }
+
+                    $incoming = \sanitize_text_field((string) $value);
+                    if ($incoming === '') {
+                        return (string) \get_option(Settings::providerClientSecretOptionKey($slug), '');
+                    }
+
+                    return $incoming;
+                },
+                'default'           => '',
+            ],
+        );
+    }
+
+    private function renderCustomProviderSection(): void
+    {
+        $slug             = CustomProviderSettings::SLUG;
+        $status           = Settings::providerAdminStatus($slug);
+        $statusLabel      = $this->statusLabel($status);
+        $clientId         = Settings::providerClientId($slug);
+        $clientSecret     = Settings::providerClientSecret($slug);
+        $canEnable        = Settings::hasProviderCredentials($slug) && CustomProviderSettings::isDefined();
+        $idOptionKey      = Settings::providerClientIdOptionKey($slug);
+        $secretOptionKey  = Settings::providerClientSecretOptionKey($slug);
+        $enabledOptionKey = Settings::providerEnabledOptionKey($slug);
+        ?>
+        <h2 style="margin-top:2em;"><?php echo \esc_html__('Custom provider (OIDC)', 'wp-oauth-connect'); ?></h2>
+        <p class="description" style="max-width:960px;">
+            <?php
+            echo \esc_html__(
+                'One extra OIDC identity provider (Okta, Auth0, Keycloak, corporate SSO). Slug is always custom — include custom in the button order field above.',
+                'wp-oauth-connect',
+            );
+            ?>
+        </p>
+        <div style="max-width:960px;margin:1em 0;padding:1em 1.25em;background:#fff;border:1px solid #c3c4c7;border-radius:4px;">
+            <h3 style="margin-top:0;">
+                <?php echo \esc_html__('Custom', 'wp-oauth-connect'); ?>
+                <span style="font-size:12px;font-weight:400;color:#646970;">— <?php echo \esc_html($statusLabel); ?></span>
+            </h3>
+            <p style="margin:0 0 1em;">
+                <strong><?php echo \esc_html__('Callback URL:', 'wp-oauth-connect'); ?></strong>
+                <code><?php echo \esc_html(\home_url('/oauth/custom/callback')); ?></code>
+            </p>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row">
+                        <label for="woc-custom-label"><?php echo \esc_html__('Button label', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <input
+                            type="text"
+                            class="regular-text"
+                            id="woc-custom-label"
+                            name="<?php echo \esc_attr(CustomProviderSettings::LABEL_OPTION); ?>"
+                            value="<?php echo \esc_attr(CustomProviderSettings::label()); ?>"
+                            placeholder="<?php echo \esc_attr__('Continue with Acme SSO', 'wp-oauth-connect'); ?>"
+                        />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="woc-custom-icon-text"><?php echo \esc_html__('Icon text', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <input
+                            type="text"
+                            class="small-text"
+                            id="woc-custom-icon-text"
+                            name="<?php echo \esc_attr(CustomProviderSettings::ICON_TEXT_OPTION); ?>"
+                            value="<?php echo \esc_attr(CustomProviderSettings::iconText()); ?>"
+                            maxlength="3"
+                            placeholder="A"
+                        />
+                        <p class="description">
+                            <?php echo \esc_html__('Short text or emoji shown in the button icon circle (max 3 characters).', 'wp-oauth-connect'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="woc-custom-icon-html"><?php echo \esc_html__('Icon HTML (optional)', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <textarea
+                            class="large-text code"
+                            rows="4"
+                            id="woc-custom-icon-html"
+                            name="<?php echo \esc_attr(CustomProviderSettings::ICON_HTML_OPTION); ?>"
+                            placeholder="&lt;svg ...&gt;..."
+                        ><?php echo \esc_textarea(CustomProviderSettings::iconHtmlRaw()); ?></textarea>
+                        <p class="description">
+                            <?php
+                            echo \esc_html__(
+                                'Inline SVG or small HTML for the icon. Overrides icon text when set. Allowed tags: span, svg, path, img.',
+                                'wp-oauth-connect',
+                            );
+                            ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="woc-custom-issuer"><?php echo \esc_html__('OIDC issuer URL', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <input
+                            type="url"
+                            class="regular-text"
+                            id="woc-custom-issuer"
+                            name="<?php echo \esc_attr(CustomProviderSettings::ISSUER_OPTION); ?>"
+                            value="<?php echo \esc_attr(CustomProviderSettings::issuer()); ?>"
+                            placeholder="https://your-idp.example.com/oauth2/default"
+                        />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="woc-custom-scopes"><?php echo \esc_html__('Scopes', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <input
+                            type="text"
+                            class="regular-text"
+                            id="woc-custom-scopes"
+                            name="<?php echo \esc_attr(CustomProviderSettings::SCOPES_OPTION); ?>"
+                            value="<?php echo \esc_attr((string) \get_option(CustomProviderSettings::SCOPES_OPTION, CustomProviderSettings::DEFAULT_SCOPES)); ?>"
+                        />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="<?php echo \esc_attr($idOptionKey); ?>"><?php echo \esc_html__('Client ID', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <input
+                            type="text"
+                            class="regular-text"
+                            id="<?php echo \esc_attr($idOptionKey); ?>"
+                            name="<?php echo \esc_attr($idOptionKey); ?>"
+                            value="<?php echo \esc_attr($clientId); ?>"
+                            autocomplete="off"
+                        />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="<?php echo \esc_attr($secretOptionKey); ?>"><?php echo \esc_html__('Client Secret', 'wp-oauth-connect'); ?></label>
+                    </th>
+                    <td>
+                        <input
+                            type="password"
+                            class="regular-text"
+                            id="<?php echo \esc_attr($secretOptionKey); ?>"
+                            name="<?php echo \esc_attr($secretOptionKey); ?>"
+                            value=""
+                            placeholder="<?php echo \esc_attr($clientSecret !== '' ? Settings::maskSecret($clientSecret) : ''); ?>"
+                            autocomplete="new-password"
+                        />
+                    </td>
+                </tr>
+            </table>
+            <label>
+                <input
+                    type="checkbox"
+                    name="<?php echo \esc_attr($enabledOptionKey); ?>"
+                    value="1"
+                    <?php \checked(Settings::isProviderEnabled($slug)); ?>
+                    <?php \disabled(!$canEnable); ?>
+                />
+                <?php echo \esc_html__('Enable custom provider on login and join pages', 'wp-oauth-connect'); ?>
+            </label>
+            <?php if (!$canEnable) : ?>
+                <p class="description" style="margin:.5em 0 0;">
+                    <?php
+                    echo \esc_html__(
+                        'Fill in button label, OIDC issuer URL, Client ID, and Client Secret — then save before enabling.',
+                        'wp-oauth-connect',
+                    );
+                    ?>
+                </p>
+            <?php endif; ?>
         </div>
         <?php
     }

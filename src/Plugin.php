@@ -11,6 +11,7 @@ namespace WpOAuthConnect;
 use WpOAuthConnect\BindPrompt\BindPromptHandler;
 use WpOAuthConnect\BindPrompt\BindPromptStore;
 use WpOAuthConnect\Hooks\AdminHooks;
+use WpOAuthConnect\Hooks\CustomProviderHooks;
 use WpOAuthConnect\Hooks\LoginButtonsHooks;
 use WpOAuthConnect\Hooks\NativeLoginHooks;
 use WpOAuthConnect\Hooks\OAuthHooks;
@@ -38,6 +39,7 @@ final class Plugin
         $oauthHooks   = new OAuthHooks($oauthService);
 
         (new AdminHooks())->register();
+        (new CustomProviderHooks())->register();
         (new RoutingHooks($oauthHooks))->register();
         (new LoginButtonsHooks())->register();
         (new NativeLoginHooks())->register();

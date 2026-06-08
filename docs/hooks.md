@@ -29,6 +29,13 @@ oauth_native_login_enabled(): bool;
 | `google` | OIDC | Issuer `https://accounts.google.com` |
 | `github` | OAuth2 | Uses `GithubProfileAdapter` for `/user/emails` |
 | `microsoft` | OIDC | Disabled until creds + enable flag |
+| `custom` | OIDC | Admin UI — label, icon, issuer, creds (Settings → OAuth Connect) |
+
+## Custom provider (admin UI)
+
+One OIDC slot with slug `custom`. Configure button label, icon text or inline SVG,
+issuer URL, scopes, and client credentials on **Settings → OAuth Connect**. Include
+`custom` in the login button order field (e.g. `linkedin,custom,google`).
 
 ## Add a custom OIDC provider (no new PHP)
 

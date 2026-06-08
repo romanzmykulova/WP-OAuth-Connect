@@ -264,6 +264,10 @@ final class Settings
     {
         self::ensureStateKey();
 
+        if ($slug === CustomProviderSettings::SLUG && !CustomProviderSettings::isDefined()) {
+            return false;
+        }
+
         if (!self::hasProviderCredentials($slug)) {
             return false;
         }
