@@ -16,6 +16,7 @@ use WpOAuthConnect\Hooks\NativeLoginHooks;
 use WpOAuthConnect\Hooks\OAuthHooks;
 use WpOAuthConnect\Hooks\RoutingHooks;
 use WpOAuthConnect\Migrations\Migrator;
+use WpOAuthConnect\Options\Settings;
 use WpOAuthConnect\Provider\ProviderRegistry;
 
 final class Plugin
@@ -24,6 +25,8 @@ final class Plugin
 
     public static function boot(string $pluginFile): void
     {
+        Settings::ensureStateKey();
+
         self::$registry = ProviderRegistry::fromPluginDir(\plugin_dir_path($pluginFile));
 
         $pluginDir = \plugin_dir_path($pluginFile);

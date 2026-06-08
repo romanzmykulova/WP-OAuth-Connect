@@ -52,6 +52,32 @@ final class AdminHooks
                 'default'           => '1',
             ],
         );
+
+        \register_setting(
+            'wp_oauth_connect',
+            Settings::LOGIN_BUTTON_ORDER_OPTION,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => static function (mixed $value): string {
+                    $raw = \sanitize_text_field((string) $value);
+                    if ($raw === '') {
+                        return \implode(',', Settings::DEFAULT_LOGIN_BUTTON_ORDER);
+                    }
+
+                    /** @var list<string> $slugs */
+                    $slugs = \preg_split('/[\s,]+/', \strtolower($raw), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                    $clean = [];
+                    foreach ($slugs as $slug) {
+                        if (\preg_match('/^[a-z0-9_-]+$/', $slug) === 1) {
+                            $clean[] = $slug;
+                        }
+                    }
+
+                    return $clean !== [] ? \implode(',', $clean) : \implode(',', Settings::DEFAULT_LOGIN_BUTTON_ORDER);
+                },
+                'default'           => \implode(',', Settings::DEFAULT_LOGIN_BUTTON_ORDER),
+            ],
+        );
     }
 
     public function renderPage(): void
@@ -60,23 +86,32 @@ final class AdminHooks
             return;
         }
 
-        $stateConfigured = Settings::isStateKeyConfigured();
+        Settings::ensureStateKey();
+        $stateFromConfig = Settings::isStateKeyFromWpConfig();
+        $buttonOrder     = \implode(', ', Settings::loginButtonOrder());
         ?>
         <div class="wrap">
             <h1><?php echo \esc_html__('OAuth Connect', 'wp-oauth-connect'); ?></h1>
 
-            <?php if (!$stateConfigured) : ?>
-                <div class="notice notice-warning">
-                    <p>
+            <div class="notice notice-info">
+                <p>
+                    <?php if ($stateFromConfig) : ?>
                         <?php
                         echo \esc_html__(
-                            'Define OAUTH_STATE_KEY in wp-config.php before enabling providers.',
+                            'OAuth state signing uses OAUTH_STATE_KEY from wp-config.php.',
                             'wp-oauth-connect',
                         );
                         ?>
-                    </p>
-                </div>
-            <?php endif; ?>
+                    <?php else : ?>
+                        <?php
+                        echo \esc_html__(
+                            'OAuth state signing key was auto-generated on first use. Optional: set OAUTH_STATE_KEY in wp-config.php to pin a custom key.',
+                            'wp-oauth-connect',
+                        );
+                        ?>
+                    <?php endif; ?>
+                </p>
+            </div>
 
             <form method="post" action="options.php">
                 <?php \settings_fields('wp_oauth_connect'); ?>
@@ -99,7 +134,7 @@ final class AdminHooks
                             $idConstant  = Settings::providerClientIdConstant($slug);
                             $secretConst = Settings::providerClientSecretConstant($slug);
                             $optionKey   = Settings::providerEnabledOptionKey($slug);
-                            $canEnable   = $status !== 'missing_creds' && $status !== 'missing_state_key';
+                            $canEnable   = $status !== 'missing_creds';
                             ?>
                             <tr>
                                 <td><strong><?php echo \esc_html(ucfirst($slug)); ?></strong></td>
@@ -124,6 +159,29 @@ final class AdminHooks
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+
+                <h2 style="margin-top: 2em;"><?php echo \esc_html__('Login button order', 'wp-oauth-connect'); ?></h2>
+                <p>
+                    <label for="woc-login-button-order">
+                        <?php echo \esc_html__('Provider slugs (comma-separated)', 'wp-oauth-connect'); ?>
+                    </label>
+                </p>
+                <input
+                    type="text"
+                    class="regular-text"
+                    id="woc-login-button-order"
+                    name="<?php echo \esc_attr(Settings::LOGIN_BUTTON_ORDER_OPTION); ?>"
+                    value="<?php echo \esc_attr($buttonOrder); ?>"
+                    placeholder="linkedin, google, github"
+                />
+                <p class="description">
+                    <?php
+                    echo \esc_html__(
+                        'Controls the order of OAuth buttons on login and join pages. Only providers with credentials configured and enabled appear.',
+                        'wp-oauth-connect',
+                    );
+                    ?>
+                </p>
 
                 <h2 style="margin-top: 2em;"><?php echo \esc_html__('Login mode', 'wp-oauth-connect'); ?></h2>
                 <fieldset>
@@ -173,7 +231,6 @@ final class AdminHooks
     private function statusLabel(string $status): string
     {
         return match ($status) {
-            'missing_state_key' => __('Missing OAUTH_STATE_KEY', 'wp-oauth-connect'),
             'missing_creds'     => __('Credentials not configured', 'wp-oauth-connect'),
             'disabled'          => __('Configured, disabled', 'wp-oauth-connect'),
             'ready'             => __('Ready', 'wp-oauth-connect'),

@@ -14,7 +14,20 @@ final class Settings
 
     public const STATE_KEY_CONSTANT = 'OAUTH_STATE_KEY';
 
+    /** Fallback when OAUTH_STATE_KEY is not in wp-config — generated once on first use. */
+    public const STATE_KEY_OPTION = 'woc_oauth_state_key';
+
     public const NATIVE_LOGIN_ENABLED_OPTION = 'woc_oauth_native_login_enabled';
+
+    /** Comma-separated provider slugs for login/join button order (e.g. linkedin,google,github). */
+    public const LOGIN_BUTTON_ORDER_OPTION = 'woc_oauth_login_button_order';
+
+    /** @var list<string> */
+    public const DEFAULT_LOGIN_BUTTON_ORDER = [
+        'linkedin',
+        'google',
+        'github',
+    ];
 
     /** @var list<string> */
     public const BUILTIN_PROVIDER_SLUGS = [
@@ -34,14 +47,83 @@ final class Settings
         \update_option(self::SCHEMA_VERSION_OPTION, $version, false);
     }
 
+    /**
+     * Ensures a signing key exists. wp-config OAUTH_STATE_KEY wins; otherwise
+     * a one-time random key is stored in woc_oauth_state_key.
+     */
+    public static function ensureStateKey(): void
+    {
+        if (self::readConstant(self::STATE_KEY_CONSTANT) !== '') {
+            return;
+        }
+
+        $stored = (string) \get_option(self::STATE_KEY_OPTION, '');
+        if ($stored !== '') {
+            return;
+        }
+
+        $generated = \rtrim(\strtr(\base64_encode(\random_bytes(32)), '+/', '-_'), '=');
+        \update_option(self::STATE_KEY_OPTION, $generated, false);
+    }
+
     public static function stateKey(): string
     {
-        return self::readConstant(self::STATE_KEY_CONSTANT);
+        $fromConstant = self::readConstant(self::STATE_KEY_CONSTANT);
+        if ($fromConstant !== '') {
+            return $fromConstant;
+        }
+
+        self::ensureStateKey();
+
+        return (string) \get_option(self::STATE_KEY_OPTION, '');
     }
 
     public static function isStateKeyConfigured(): bool
     {
         return self::stateKey() !== '';
+    }
+
+    public static function isStateKeyFromWpConfig(): bool
+    {
+        return self::readConstant(self::STATE_KEY_CONSTANT) !== '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function loginButtonOrder(): array
+    {
+        $raw = (string) \get_option(self::LOGIN_BUTTON_ORDER_OPTION, '');
+        if ($raw === '') {
+            return self::DEFAULT_LOGIN_BUTTON_ORDER;
+        }
+
+        /** @var list<string> $slugs */
+        $slugs = \preg_split('/[\s,]+/', \strtolower($raw), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $order = [];
+        foreach ($slugs as $slug) {
+            if (\preg_match('/^[a-z0-9_-]+$/', $slug) === 1) {
+                $order[] = $slug;
+            }
+        }
+
+        return $order !== [] ? $order : self::DEFAULT_LOGIN_BUTTON_ORDER;
+    }
+
+    /**
+     * @param list<string> $slugs
+     */
+    public static function setLoginButtonOrder(array $slugs): void
+    {
+        $clean = [];
+        foreach ($slugs as $slug) {
+            $normalized = \strtolower((string) $slug);
+            if (\preg_match('/^[a-z0-9_-]+$/', $normalized) === 1) {
+                $clean[] = $normalized;
+            }
+        }
+
+        \update_option(self::LOGIN_BUTTON_ORDER_OPTION, \implode(',', $clean), false);
     }
 
     /**
@@ -98,9 +180,7 @@ final class Settings
      */
     public static function isProviderOperational(string $slug): bool
     {
-        if (!self::isStateKeyConfigured()) {
-            return false;
-        }
+        self::ensureStateKey();
 
         if (!self::hasProviderCredentials($slug)) {
             return false;
@@ -124,13 +204,12 @@ final class Settings
     /**
      * Admin status badge: missing creds, disabled, or ready.
      *
-     * @return 'missing_creds'|'disabled'|'missing_state_key'|'ready'
+     * @return 'missing_creds'|'disabled'|'ready'
      */
     public static function providerAdminStatus(string $slug): string
     {
-        if (!self::isStateKeyConfigured()) {
-            return 'missing_state_key';
-        }
+        self::ensureStateKey();
+
         if (!self::hasProviderCredentials($slug)) {
             return 'missing_creds';
         }

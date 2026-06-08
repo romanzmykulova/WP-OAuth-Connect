@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Default woc_oauth_login_buttons filter — LinkedIn → Google → GitHub order.
+ * Default woc_oauth_login_buttons filter — only operational providers,
+ * order from Settings → OAuth Connect.
  */
 
 namespace WpOAuthConnect\Hooks;
@@ -10,16 +11,10 @@ namespace WpOAuthConnect\Hooks;
 use WpOAuthConnect\Options\Settings;
 use WpOAuthConnect\Plugin;
 use WpOAuthConnect\Provider\Provider;
+use WpOAuthConnect\Provider\ProviderRegistry;
 
 final class LoginButtonsHooks
 {
-    /** @var list<string> */
-    private const DEFAULT_ORDER = [
-        'linkedin',
-        'google',
-        'github',
-    ];
-
     public function register(): void
     {
         \add_filter('woc_oauth_login_buttons', [$this, 'defaultButtons'], 10, 2);
@@ -34,14 +29,14 @@ final class LoginButtonsHooks
     public function defaultButtons(array $buttons, array $context): array
     {
         if ($buttons !== []) {
-            return $buttons;
+            return $this->filterOperationalOnly($buttons);
         }
 
         $registry = Plugin::registry();
         $seen     = [];
 
-        foreach (self::DEFAULT_ORDER as $slug) {
-            if (!$registry->has($slug)) {
+        foreach ($this->orderedSlugs($registry) as $slug) {
+            if (!$registry->has($slug) || !Settings::isProviderOperational($slug)) {
                 continue;
             }
 
@@ -51,7 +46,7 @@ final class LoginButtonsHooks
 
         foreach ($registry->all() as $provider) {
             $slug = $provider->slug();
-            if (isset($seen[$slug])) {
+            if (isset($seen[$slug]) || !Settings::isProviderOperational($slug)) {
                 continue;
             }
 
@@ -59,6 +54,56 @@ final class LoginButtonsHooks
         }
 
         return $buttons;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $buttons
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function filterOperationalOnly(array $buttons): array
+    {
+        $registry = Plugin::registry();
+        $filtered = [];
+
+        foreach ($buttons as $button) {
+            $slug = (string) ($button['provider'] ?? '');
+            if ($slug === '' || !$registry->has($slug) || !Settings::isProviderOperational($slug)) {
+                continue;
+            }
+
+            $button['enabled'] = true;
+            $filtered[] = $button;
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function orderedSlugs(ProviderRegistry $registry): array
+    {
+        $order = Settings::loginButtonOrder();
+        $seen  = [];
+        $slugs = [];
+
+        foreach ($order as $slug) {
+            if (isset($seen[$slug]) || !$registry->has($slug)) {
+                continue;
+            }
+            $slugs[] = $slug;
+            $seen[$slug] = true;
+        }
+
+        foreach ($registry->all() as $provider) {
+            $slug = $provider->slug();
+            if (!isset($seen[$slug])) {
+                $slugs[] = $slug;
+            }
+        }
+
+        return $slugs;
     }
 
     /**
@@ -74,7 +119,7 @@ final class LoginButtonsHooks
             'label'     => $provider->label(),
             'url'       => \oauth_start_url($slug, $context),
             'css_class' => 'oauth-btn oauth-btn--' . $slug,
-            'enabled'   => Settings::isProviderOperational($slug),
+            'enabled'   => true,
             'icon_html' => '',
         ];
 
