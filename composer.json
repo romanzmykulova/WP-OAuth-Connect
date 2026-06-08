@@ -9,7 +9,13 @@
     "autoload": {
         "psr-4": {
             "WpOAuthConnect\\": "src/"
-        }
+        },
+        "files": [
+            "src/Public/providers.php",
+            "src/Public/start_url.php",
+            "src/Public/native_login.php",
+            "src/Public/provider_enabled.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
