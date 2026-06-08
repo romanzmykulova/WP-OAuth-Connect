@@ -88,30 +88,43 @@ final class AdminHooks
 
         Settings::ensureStateKey();
         $stateFromConfig = Settings::isStateKeyFromWpConfig();
+        $manualSnippet   = Settings::stateKeyWpConfigSnippet();
+        $wpConfigPath    = Settings::wpConfigPath();
         $buttonOrder     = \implode(', ', Settings::loginButtonOrder());
         ?>
         <div class="wrap">
             <h1><?php echo \esc_html__('OAuth Connect', 'wp-oauth-connect'); ?></h1>
 
-            <div class="notice notice-info">
-                <p>
-                    <?php if ($stateFromConfig) : ?>
+            <?php if ($stateFromConfig) : ?>
+                <div class="notice notice-success">
+                    <p>
                         <?php
                         echo \esc_html__(
-                            'OAuth state signing uses OAUTH_STATE_KEY from wp-config.php.',
+                            'OAUTH_STATE_KEY is configured in wp-config.php.',
                             'wp-oauth-connect',
                         );
                         ?>
-                    <?php else : ?>
+                    </p>
+                </div>
+            <?php elseif ($manualSnippet !== null) : ?>
+                <div class="notice notice-warning">
+                    <p>
                         <?php
                         echo \esc_html__(
-                            'OAuth state signing key was auto-generated on first use. Optional: set OAUTH_STATE_KEY in wp-config.php to pin a custom key.',
+                            'Could not write OAUTH_STATE_KEY to wp-config.php automatically. Paste the following line into wp-config.php before the "That\'s all, stop editing!" comment, then reload this page.',
                             'wp-oauth-connect',
                         );
                         ?>
+                    </p>
+                    <?php if ($wpConfigPath !== null) : ?>
+                        <p>
+                            <strong><?php echo \esc_html__('File:', 'wp-oauth-connect'); ?></strong>
+                            <code><?php echo \esc_html($wpConfigPath); ?></code>
+                        </p>
                     <?php endif; ?>
-                </p>
-            </div>
+                    <pre style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-width:960px;overflow:auto;"><code><?php echo \esc_html($manualSnippet); ?></code></pre>
+                </div>
+            <?php endif; ?>
 
             <form method="post" action="options.php">
                 <?php \settings_fields('wp_oauth_connect'); ?>

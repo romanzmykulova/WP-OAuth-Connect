@@ -8,14 +8,20 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect\Options;
 
+use WpOAuthConnect\Support\StateKeyInstallResult;
+use WpOAuthConnect\Support\WpConfigStateKeyInstaller;
+
 final class Settings
 {
     public const SCHEMA_VERSION_OPTION = 'woc_schema_version';
 
     public const STATE_KEY_CONSTANT = 'OAUTH_STATE_KEY';
 
-    /** Fallback when OAUTH_STATE_KEY is not in wp-config — generated once on first use. */
+    /** Runtime fallback until wp-config is updated (or auto-write succeeds). */
     public const STATE_KEY_OPTION = 'woc_oauth_state_key';
+
+    /** Set to 1 when wp-config must be edited manually. */
+    public const STATE_KEY_MANUAL_PENDING_OPTION = 'woc_oauth_state_key_manual_pending';
 
     public const NATIVE_LOGIN_ENABLED_OPTION = 'woc_oauth_native_login_enabled';
 
@@ -48,22 +54,31 @@ final class Settings
     }
 
     /**
-     * Ensures a signing key exists. wp-config OAUTH_STATE_KEY wins; otherwise
-     * a one-time random key is stored in woc_oauth_state_key.
+     * Ensures OAUTH_STATE_KEY exists: use wp-config when present, otherwise
+     * auto-write wp-config.php or fall back to a stored option + admin snippet.
      */
     public static function ensureStateKey(): void
     {
         if (self::readConstant(self::STATE_KEY_CONSTANT) !== '') {
+            self::clearStateKeyFallbackOptions();
             return;
         }
 
-        $stored = (string) \get_option(self::STATE_KEY_OPTION, '');
-        if ($stored !== '') {
+        $installer = new WpConfigStateKeyInstaller();
+        $result    = $installer->installIfMissing((string) \get_option(self::STATE_KEY_OPTION, ''));
+
+        if ($result->status === StateKeyInstallResult::STATUS_ALREADY_CONFIGURED) {
+            self::clearStateKeyFallbackOptions();
             return;
         }
 
-        $generated = \rtrim(\strtr(\base64_encode(\random_bytes(32)), '+/', '-_'), '=');
-        \update_option(self::STATE_KEY_OPTION, $generated, false);
+        if ($result->writtenToWpConfig()) {
+            self::clearStateKeyFallbackOptions();
+            return;
+        }
+
+        \update_option(self::STATE_KEY_OPTION, $result->key, false);
+        \update_option(self::STATE_KEY_MANUAL_PENDING_OPTION, '1', false);
     }
 
     public static function stateKey(): string
@@ -76,6 +91,33 @@ final class Settings
         self::ensureStateKey();
 
         return (string) \get_option(self::STATE_KEY_OPTION, '');
+    }
+
+    public static function stateKeyNeedsManualInstall(): bool
+    {
+        return !self::isStateKeyFromWpConfig()
+            && (string) \get_option(self::STATE_KEY_MANUAL_PENDING_OPTION, '') === '1'
+            && self::stateKey() !== '';
+    }
+
+    public static function stateKeyWpConfigSnippet(): ?string
+    {
+        if (!self::stateKeyNeedsManualInstall()) {
+            return null;
+        }
+
+        return (new WpConfigStateKeyInstaller())->wpConfigSnippet(self::stateKey());
+    }
+
+    public static function wpConfigPath(): ?string
+    {
+        return (new WpConfigStateKeyInstaller())->locateWpConfigPath();
+    }
+
+    private static function clearStateKeyFallbackOptions(): void
+    {
+        \delete_option(self::STATE_KEY_OPTION);
+        \delete_option(self::STATE_KEY_MANUAL_PENDING_OPTION);
     }
 
     public static function isStateKeyConfigured(): bool

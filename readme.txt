@@ -17,7 +17,7 @@ Registration policy and login UI stay in companion application plugins.
 
 1. Symlink or copy into wp-content/plugins/wp-oauth-connect/
 2. Run composer install in the plugin directory
-3. Define per-provider client constants in wp-config.php (OAUTH_STATE_KEY is optional — auto-generated on first use)
+3. Define per-provider client constants in wp-config.php (OAUTH_STATE_KEY is auto-written to wp-config when possible; otherwise shown on Settings → OAuth Connect)
 4. Activate the plugin and enable providers on Settings → OAuth Connect
 
 == Hooks ==
