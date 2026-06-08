@@ -8,12 +8,15 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect;
 
+use WpOAuthConnect\Hooks\AdminHooks;
 use WpOAuthConnect\Migrations\Migrator;
 
 final class Plugin
 {
     public static function boot(string $pluginFile): void
     {
+        (new AdminHooks())->register();
+
         \add_action('init', [Migrator::class, 'run'], 5);
     }
 }

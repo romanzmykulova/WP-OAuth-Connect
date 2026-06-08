@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect\Migrations;
 
+use WpOAuthConnect\Options\Settings;
+
 final class Migrator
 {
-    private const SCHEMA_VERSION_OPTION = 'woc_schema_version';
-
     public static function run(): void
     {
         global $wpdb;
@@ -18,7 +18,7 @@ final class Migrator
             return;
         }
 
-        $currentVersion = (int) \get_option(self::SCHEMA_VERSION_OPTION, 0);
+        $currentVersion = Settings::schemaVersion();
         $pending        = self::pendingMigrations($currentVersion);
         if ($pending === []) {
             return;
@@ -32,7 +32,7 @@ final class Migrator
             $highestApplied = max($highestApplied, $version);
         }
 
-        \update_option(self::SCHEMA_VERSION_OPTION, $highestApplied, false);
+        Settings::setSchemaVersion($highestApplied);
     }
 
     /**

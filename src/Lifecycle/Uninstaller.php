@@ -8,10 +8,17 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect\Lifecycle;
 
+use WpOAuthConnect\Options\Settings;
+
 final class Uninstaller
 {
     public static function run(): void
     {
-        // Option cleanup is wired once Settings ships.
+        \delete_option(Settings::SCHEMA_VERSION_OPTION);
+        \delete_option(Settings::NATIVE_LOGIN_ENABLED_OPTION);
+
+        foreach (Settings::builtinProviderSlugs() as $slug) {
+            \delete_option(Settings::providerEnabledOptionKey($slug));
+        }
     }
 }
