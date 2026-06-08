@@ -2,8 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Registers provider-agnostic /oauth/{slug}/start|callback rewrite rules
- * and dispatches template_redirect to OAuthHooks.
+ * Registers provider-agnostic OAuth rewrite rules and dispatches template_redirect.
  */
 
 namespace WpOAuthConnect\Hooks;
@@ -11,8 +10,7 @@ namespace WpOAuthConnect\Hooks;
 final class RoutingHooks
 {
     public function __construct(
-        private readonly string $pluginFile,
-        private readonly ?OAuthHooks $oauthHooks = null,
+        private readonly OAuthHooks $oauthHooks,
     ) {}
 
     public function register(): void
@@ -34,6 +32,11 @@ final class RoutingHooks
             'index.php?woc_oauth_provider=$matches[1]&woc_oauth_action=callback',
             'top',
         );
+        \add_rewrite_rule(
+            '^oauth/bind/?$',
+            'index.php?woc_oauth_action=bind',
+            'top',
+        );
     }
 
     /**
@@ -52,7 +55,16 @@ final class RoutingHooks
         $provider = (string) \get_query_var('woc_oauth_provider');
         $action   = (string) \get_query_var('woc_oauth_action');
 
-        if ($provider === '' || $action === '') {
+        if ($action === '') {
+            return;
+        }
+
+        if ($action === 'bind') {
+            $this->oauthHooks->handleBind();
+            return;
+        }
+
+        if ($provider === '') {
             return;
         }
 
@@ -61,18 +73,17 @@ final class RoutingHooks
             return;
         }
 
-        if ($action !== 'start' && $action !== 'callback') {
-            $this->sendNotFound();
-            return;
-        }
-
-        $handler = $this->oauthHooks ?? new OAuthHooks($this->pluginFile);
         if ($action === 'start') {
-            $handler->handleStart($provider);
+            $this->oauthHooks->handleStart($provider);
             return;
         }
 
-        $handler->handleCallback($provider);
+        if ($action === 'callback') {
+            $this->oauthHooks->handleCallback($provider);
+            return;
+        }
+
+        $this->sendNotFound();
     }
 
     private function sendNotFound(): void

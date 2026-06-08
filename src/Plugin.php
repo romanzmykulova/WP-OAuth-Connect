@@ -8,7 +8,12 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect;
 
+use WpOAuthConnect\BindPrompt\BindPromptHandler;
+use WpOAuthConnect\BindPrompt\BindPromptStore;
 use WpOAuthConnect\Hooks\AdminHooks;
+use WpOAuthConnect\Hooks\LoginButtonsHooks;
+use WpOAuthConnect\Hooks\NativeLoginHooks;
+use WpOAuthConnect\Hooks\OAuthHooks;
 use WpOAuthConnect\Hooks\RoutingHooks;
 use WpOAuthConnect\Migrations\Migrator;
 use WpOAuthConnect\Provider\ProviderRegistry;
@@ -21,8 +26,18 @@ final class Plugin
     {
         self::$registry = ProviderRegistry::fromPluginDir(\plugin_dir_path($pluginFile));
 
+        $pluginDir = \plugin_dir_path($pluginFile);
+        $state     = new OAuthState();
+        $linker    = new AccountLinker();
+        $bindStore = new BindPromptStore();
+        $bindHandler = new BindPromptHandler($bindStore, $linker, $state, $pluginDir);
+        $oauthService = new OAuthService(self::$registry, $state, $linker, $bindStore, $bindHandler);
+        $oauthHooks   = new OAuthHooks($oauthService);
+
         (new AdminHooks())->register();
-        (new RoutingHooks($pluginFile))->register();
+        (new RoutingHooks($oauthHooks))->register();
+        (new LoginButtonsHooks())->register();
+        (new NativeLoginHooks())->register();
 
         \add_action('init', [Migrator::class, 'run'], 5);
     }
