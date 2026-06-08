@@ -1,0 +1,26 @@
+{
+    "name": "wp-oauth-connect/wp-oauth-connect",
+    "description": "Generic OAuth transport + identity-linking layer for WordPress — providers, routes, CSRF state, account linking, hook API.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "WpOAuthConnect\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WpOAuthConnect\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {}
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
