@@ -7,6 +7,6 @@ declare(strict_types=1);
 
 namespace WpOAuthConnect\Exceptions;
 
-final class OAuthStateInvalid extends \RuntimeException
+class OAuthStateInvalid extends \RuntimeException
 {
 }
