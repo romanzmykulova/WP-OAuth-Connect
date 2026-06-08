@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Admin settings page: per-provider status badges, enable toggles,
- * native-login mode, and wp-config constant hints.
+ * Admin settings page: per-provider credentials, enable toggles,
+ * native-login mode, and state-key status.
  */
 
 namespace WpOAuthConnect\Hooks;
@@ -39,6 +39,43 @@ final class AdminHooks
                     'type'              => 'string',
                     'sanitize_callback' => static fn (mixed $value): string => $value === '1' ? '1' : '0',
                     'default'           => '0',
+                ],
+            );
+
+            \register_setting(
+                'wp_oauth_connect',
+                Settings::providerClientIdOptionKey($slug),
+                [
+                    'type'              => 'string',
+                    'sanitize_callback' => static function (mixed $value) use ($slug): string {
+                        if (Settings::providerCredentialsFromWpConfig($slug)) {
+                            return (string) \get_option(Settings::providerClientIdOptionKey($slug), '');
+                        }
+
+                        return \sanitize_text_field((string) $value);
+                    },
+                    'default'           => '',
+                ],
+            );
+
+            \register_setting(
+                'wp_oauth_connect',
+                Settings::providerClientSecretOptionKey($slug),
+                [
+                    'type'              => 'string',
+                    'sanitize_callback' => static function (mixed $value) use ($slug): string {
+                        if (Settings::providerCredentialsFromWpConfig($slug)) {
+                            return (string) \get_option(Settings::providerClientSecretOptionKey($slug), '');
+                        }
+
+                        $incoming = \sanitize_text_field((string) $value);
+                        if ($incoming === '') {
+                            return (string) \get_option(Settings::providerClientSecretOptionKey($slug), '');
+                        }
+
+                        return $incoming;
+                    },
+                    'default'           => '',
                 ],
             );
         }
@@ -100,7 +137,7 @@ final class AdminHooks
                     <p>
                         <?php
                         echo \esc_html__(
-                            'OAUTH_STATE_KEY is configured in wp-config.php.',
+                            'OAUTH_STATE_KEY is ready. Enter each provider\'s Client ID and Client Secret below (from your LinkedIn / Google / GitHub developer app), then enable the provider.',
                             'wp-oauth-connect',
                         );
                         ?>
@@ -130,48 +167,128 @@ final class AdminHooks
                 <?php \settings_fields('wp_oauth_connect'); ?>
 
                 <h2><?php echo \esc_html__('Providers', 'wp-oauth-connect'); ?></h2>
-                <table class="widefat striped" style="max-width: 960px;">
-                    <thead>
-                        <tr>
-                            <th><?php echo \esc_html__('Provider', 'wp-oauth-connect'); ?></th>
-                            <th><?php echo \esc_html__('Status', 'wp-oauth-connect'); ?></th>
-                            <th><?php echo \esc_html__('wp-config constants', 'wp-oauth-connect'); ?></th>
-                            <th><?php echo \esc_html__('Enabled', 'wp-oauth-connect'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach (Settings::builtinProviderSlugs() as $slug) : ?>
-                            <?php
-                            $status      = Settings::providerAdminStatus($slug);
-                            $statusLabel = $this->statusLabel($status);
-                            $idConstant  = Settings::providerClientIdConstant($slug);
-                            $secretConst = Settings::providerClientSecretConstant($slug);
-                            $optionKey   = Settings::providerEnabledOptionKey($slug);
-                            $canEnable   = $status !== 'missing_creds';
-                            ?>
-                            <tr>
-                                <td><strong><?php echo \esc_html(ucfirst($slug)); ?></strong></td>
-                                <td><?php echo \esc_html($statusLabel); ?></td>
-                                <td>
-                                    <code><?php echo \esc_html($idConstant); ?></code>,
-                                    <code><?php echo \esc_html($secretConst); ?></code>
-                                </td>
-                                <td>
-                                    <label>
+                <p class="description" style="max-width:960px;">
+                    <?php
+                    echo \esc_html__(
+                        'The state signing key is separate from provider credentials. Each provider needs an OAuth app registered with the callback URL shown below.',
+                        'wp-oauth-connect',
+                    );
+                    ?>
+                </p>
+
+                <?php foreach (Settings::builtinProviderSlugs() as $slug) :
+                    $status           = Settings::providerAdminStatus($slug);
+                    $statusLabel      = $this->statusLabel($status);
+                    $fromWpConfig     = Settings::providerCredentialsFromWpConfig($slug);
+                    $clientId         = Settings::providerClientId($slug);
+                    $clientSecret     = Settings::providerClientSecret($slug);
+                    $canEnable        = Settings::hasProviderCredentials($slug);
+                    $idOptionKey      = Settings::providerClientIdOptionKey($slug);
+                    $secretOptionKey    = Settings::providerClientSecretOptionKey($slug);
+                    $enabledOptionKey = Settings::providerEnabledOptionKey($slug);
+                    ?>
+                    <div style="max-width:960px;margin:1.5em 0;padding:1em 1.25em;background:#fff;border:1px solid #c3c4c7;border-radius:4px;">
+                        <h3 style="margin-top:0;">
+                            <?php echo \esc_html(ucfirst($slug)); ?>
+                            <span style="font-size:12px;font-weight:400;color:#646970;">— <?php echo \esc_html($statusLabel); ?></span>
+                        </h3>
+                        <p style="margin:0 0 1em;">
+                            <strong><?php echo \esc_html__('Callback URL:', 'wp-oauth-connect'); ?></strong>
+                            <code><?php echo \esc_html(\home_url('/oauth/' . $slug . '/callback')); ?></code>
+                        </p>
+
+                        <?php if ($fromWpConfig) : ?>
+                            <p class="description">
+                                <?php
+                                echo \esc_html__(
+                                    'Credentials are locked via wp-config.php constants for this provider.',
+                                    'wp-oauth-connect',
+                                );
+                                ?>
+                            </p>
+                            <p>
+                                <code><?php echo \esc_html(Settings::providerClientIdConstant($slug)); ?></code>
+                                <?php if ($clientId !== '') : ?>
+                                    — <?php echo \esc_html(Settings::maskSecret($clientId)); ?>
+                                <?php endif; ?>
+                                <br>
+                                <code><?php echo \esc_html(Settings::providerClientSecretConstant($slug)); ?></code>
+                                <?php if ($clientSecret !== '') : ?>
+                                    — <?php echo \esc_html(Settings::maskSecret($clientSecret)); ?>
+                                <?php endif; ?>
+                            </p>
+                        <?php else : ?>
+                            <table class="form-table" role="presentation" style="margin-top:0;">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="<?php echo \esc_attr($idOptionKey); ?>">
+                                            <?php echo \esc_html__('Client ID', 'wp-oauth-connect'); ?>
+                                        </label>
+                                    </th>
+                                    <td>
                                         <input
-                                            type="checkbox"
-                                            name="<?php echo \esc_attr($optionKey); ?>"
-                                            value="1"
-                                            <?php checked(Settings::isProviderEnabled($slug)); ?>
-                                            <?php disabled(!$canEnable); ?>
+                                            type="text"
+                                            class="regular-text"
+                                            id="<?php echo \esc_attr($idOptionKey); ?>"
+                                            name="<?php echo \esc_attr($idOptionKey); ?>"
+                                            value="<?php echo \esc_attr($clientId); ?>"
+                                            autocomplete="off"
                                         />
-                                        <?php echo \esc_html__('Enable', 'wp-oauth-connect'); ?>
-                                    </label>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="<?php echo \esc_attr($secretOptionKey); ?>">
+                                            <?php echo \esc_html__('Client Secret', 'wp-oauth-connect'); ?>
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input
+                                            type="password"
+                                            class="regular-text"
+                                            id="<?php echo \esc_attr($secretOptionKey); ?>"
+                                            name="<?php echo \esc_attr($secretOptionKey); ?>"
+                                            value=""
+                                            placeholder="<?php echo \esc_attr($clientSecret !== '' ? Settings::maskSecret($clientSecret) : ''); ?>"
+                                            autocomplete="new-password"
+                                        />
+                                        <?php if ($clientSecret !== '') : ?>
+                                            <p class="description">
+                                                <?php
+                                                echo \esc_html__(
+                                                    'Leave blank to keep the current secret.',
+                                                    'wp-oauth-connect',
+                                                );
+                                                ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            </table>
+                        <?php endif; ?>
+
+                        <label>
+                            <input
+                                type="checkbox"
+                                name="<?php echo \esc_attr($enabledOptionKey); ?>"
+                                value="1"
+                                <?php \checked(Settings::isProviderEnabled($slug)); ?>
+                                <?php \disabled(!$canEnable); ?>
+                            />
+                            <?php echo \esc_html__('Enable this provider on login and join pages', 'wp-oauth-connect'); ?>
+                        </label>
+                        <?php if (!$canEnable) : ?>
+                            <p class="description" style="margin:.5em 0 0;">
+                                <?php
+                                echo \esc_html__(
+                                    'Save a Client ID and Client Secret first — the enable checkbox unlocks after that.',
+                                    'wp-oauth-connect',
+                                );
+                                ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
 
                 <h2 style="margin-top: 2em;"><?php echo \esc_html__('Login button order', 'wp-oauth-connect'); ?></h2>
                 <p>
@@ -203,7 +320,7 @@ final class AdminHooks
                             type="checkbox"
                             name="<?php echo \esc_attr(Settings::NATIVE_LOGIN_ENABLED_OPTION); ?>"
                             value="1"
-                            <?php checked(Settings::isNativeLoginEnabled()); ?>
+                            <?php \checked(Settings::isNativeLoginEnabled()); ?>
                         />
                         <?php
                         echo \esc_html__(
@@ -224,19 +341,6 @@ final class AdminHooks
 
                 <?php \submit_button(); ?>
             </form>
-
-            <h2 style="margin-top: 2em;"><?php echo \esc_html__('Callback URLs', 'wp-oauth-connect'); ?></h2>
-            <p class="description">
-                <?php echo \esc_html__('Register these redirect URIs with each OAuth provider:', 'wp-oauth-connect'); ?>
-            </p>
-            <ul>
-                <?php foreach (Settings::builtinProviderSlugs() as $slug) : ?>
-                    <li>
-                        <strong><?php echo \esc_html(ucfirst($slug)); ?>:</strong>
-                        <code><?php echo \esc_html(\home_url('/oauth/' . $slug . '/callback')); ?></code>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
         </div>
         <?php
     }

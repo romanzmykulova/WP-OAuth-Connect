@@ -76,12 +76,9 @@ final class ProviderRegistryTest extends TestCase
         if (!defined('OAUTH_STATE_KEY')) {
             define('OAUTH_STATE_KEY', 'registry-test-key');
         }
-        if (!defined('OAUTH_GITHUB_CLIENT_ID')) {
-            define('OAUTH_GITHUB_CLIENT_ID', 'gh-id');
-        }
-        if (!defined('OAUTH_GITHUB_CLIENT_SECRET')) {
-            define('OAUTH_GITHUB_CLIENT_SECRET', 'gh-secret');
-        }
+
+        update_option(Settings::providerClientIdOptionKey('github'), 'gh-id');
+        update_option(Settings::providerClientSecretOptionKey('github'), 'gh-secret');
 
         $registry = ProviderRegistry::fromPluginDir($this->pluginDir, new FakeHttpClient());
 

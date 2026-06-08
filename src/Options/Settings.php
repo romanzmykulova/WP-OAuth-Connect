@@ -201,20 +201,60 @@ final class Settings
         return 'OAUTH_' . self::slugToConstantSuffix($slug) . '_CLIENT_SECRET';
     }
 
+    public static function providerClientIdOptionKey(string $slug): string
+    {
+        return 'woc_oauth_' . $slug . '_client_id';
+    }
+
+    public static function providerClientSecretOptionKey(string $slug): string
+    {
+        return 'woc_oauth_' . $slug . '_client_secret';
+    }
+
     public static function providerClientId(string $slug): string
     {
-        return self::readConstant(self::providerClientIdConstant($slug));
+        $fromConfig = self::readConstant(self::providerClientIdConstant($slug));
+        if ($fromConfig !== '') {
+            return $fromConfig;
+        }
+
+        return (string) \get_option(self::providerClientIdOptionKey($slug), '');
     }
 
     public static function providerClientSecret(string $slug): string
     {
-        return self::readConstant(self::providerClientSecretConstant($slug));
+        $fromConfig = self::readConstant(self::providerClientSecretConstant($slug));
+        if ($fromConfig !== '') {
+            return $fromConfig;
+        }
+
+        return (string) \get_option(self::providerClientSecretOptionKey($slug), '');
+    }
+
+    public static function providerCredentialsFromWpConfig(string $slug): bool
+    {
+        return self::readConstant(self::providerClientIdConstant($slug)) !== ''
+            && self::readConstant(self::providerClientSecretConstant($slug)) !== '';
     }
 
     public static function hasProviderCredentials(string $slug): bool
     {
         return self::providerClientId($slug) !== ''
             && self::providerClientSecret($slug) !== '';
+    }
+
+    public static function maskSecret(string $secret): string
+    {
+        if ($secret === '') {
+            return '';
+        }
+
+        $length = \strlen($secret);
+        if ($length <= 7) {
+            return '***';
+        }
+
+        return \substr($secret, 0, 4) . '…' . \substr($secret, -3);
     }
 
     /**
