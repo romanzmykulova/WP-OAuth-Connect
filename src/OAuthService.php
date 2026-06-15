@@ -38,7 +38,12 @@ final class OAuthService
         $redirectUri = $this->callbackUrl($providerSlug);
         $authorizeUrl = $provider->authorizeUrl($created['state'], $redirectUri);
 
-        \wp_safe_redirect($authorizeUrl);
+        // Intentional OUTBOUND redirect to the provider's authorize host (e.g.
+        // www.linkedin.com), so wp_safe_redirect's same-host allowlist must NOT
+        // apply here — it would reject the external host and fall back to
+        // /wp-admin/. The authorize URL is built from a trusted provider
+        // definition (not user input) and the signed state token carries CSRF.
+        \wp_redirect($authorizeUrl);
         exit;
     }
 

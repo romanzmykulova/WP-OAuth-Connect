@@ -165,6 +165,14 @@ if (!function_exists('wp_safe_redirect')) {
     }
 }
 
+if (!function_exists('wp_redirect')) {
+    function wp_redirect(string $url, int $status = 302): never
+    {
+        $GLOBALS['woc_test_redirect_url'] = $url;
+        throw new RuntimeException('redirect:' . $url);
+    }
+}
+
 if (!function_exists('wp_die')) {
     function wp_die(string|WP_Error $message = '', string $title = '', array|string $args = []): never
     {
