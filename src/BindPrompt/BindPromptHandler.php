@@ -115,7 +115,14 @@ final class BindPromptHandler
      */
     private function renderTemplate(array $vars): void
     {
-        $template = $this->pluginDir . '/templates/bind-prompt.php';
+        // Companion plugins (e.g. remotejobs-core) may swap in a branded,
+        // theme-aware template via this filter; default stays the minimal
+        // self-contained page so the plugin works standalone.
+        $template = (string) \apply_filters(
+            'woc_oauth_bind_template',
+            $this->pluginDir . '/templates/bind-prompt.php',
+            $vars,
+        );
         if (!is_readable($template)) {
             \wp_die(
                 \esc_html__('Bind prompt template is missing.', 'wp-oauth-connect'),
