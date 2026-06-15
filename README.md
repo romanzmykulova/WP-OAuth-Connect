@@ -10,21 +10,37 @@ application plugin* (e.g. `remotejobs-core`) that opts in through the hooks
 below. The result is a thin, self-contained core you can drop into any site and
 wire up to your own app.
 
+- **Works out of the box:** activate, add one provider's credentials, done —
+  styled "Continue with …" buttons appear on the standard WordPress login screen
+  with no companion plugin, theme edits, or shortcodes.
 - **Requires:** WordPress 6.4+, PHP 8.3+
 - **Engines:** OAuth2 + OIDC, with shipped presets for GitHub, Google, LinkedIn,
-  Microsoft, plus one admin-configurable custom OIDC slot.
+  and Microsoft — each with its own brand-icon button — plus one
+  admin-configurable custom OIDC slot.
 - **Full hook reference:** [`docs/hooks.md`](docs/hooks.md)
 
 ---
 
 ## Works out of the box
 
-Activate the plugin, add one provider's Client ID/Secret on **Settings → OAuth
-Connect**, enable it — and **"Continue with …" buttons appear on the standard
-WordPress login screen automatically.** No companion plugin, no theme edits, no
-shortcode.
+Three steps to working social login — no code, no companion plugin:
+
+1. Activate **WP OAuth Connect**.
+2. On **Settings → OAuth Connect**, paste a provider's Client ID + Secret and
+   tick *Enable*.
+3. Open your login screen — the **"Continue with …"** button is already there.
+
+That's it. The buttons render on the **standard WordPress login form**, styled
+and carrying each provider's brand icon, with no theme edits or shortcodes.
 
 ![Native wp-login.php with OAuth buttons](docs/img/native-login.png)
+
+All four built-in providers ship a ready-made, brand-coloured icon button — the
+moment you enable one it looks finished:
+
+![Built-in provider buttons: LinkedIn, GitHub, Google, Microsoft](docs/img/provider-buttons.png)
+
+### Compatible with relocated login URLs
 
 The buttons are rendered through WordPress's own login-form hooks
 (`login_form` + `login_enqueue_scripts`), **not** by sniffing the request URL.
