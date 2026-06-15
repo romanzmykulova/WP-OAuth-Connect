@@ -1,0 +1,92 @@
+/**
+ * Minimal, theme-agnostic styling for the OAuth buttons rendered on the native
+ * wp-login.php form by LoginFormHooks. Scoped under .woc-oauth-login so it never
+ * leaks into the host theme. Override or wp_dequeue_style('woc-oauth-login') to
+ * supply your own look.
+ */
+
+.woc-oauth-login {
+    margin: 16px 0 8px;
+}
+
+.woc-oauth-login__divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 8px 0 16px;
+    color: #646970;
+    font-size: 12px;
+}
+
+.woc-oauth-login__divider::before,
+.woc-oauth-login__divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.woc-oauth-login__divider span {
+    padding: 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.woc-oauth-login .oauth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    background: #fff;
+    color: #1d2327;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.woc-oauth-login .oauth-btn:hover,
+.woc-oauth-login .oauth-btn:focus {
+    border-color: #8c8f94;
+    background: #f6f7f7;
+}
+
+.woc-oauth-login .oauth-btn__icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+}
+
+.woc-oauth-login .oauth-btn--github {
+    background: #24292f;
+    border-color: #24292f;
+    color: #fff;
+}
+
+.woc-oauth-login .oauth-btn--github:hover {
+    background: #1b1f24;
+    border-color: #1b1f24;
+}
+
+.woc-oauth-login .oauth-btn--linkedin {
+    background: #0a66c2;
+    border-color: #0a66c2;
+    color: #fff;
+}
+
+.woc-oauth-login .oauth-btn--linkedin:hover {
+    background: #08529b;
+    border-color: #08529b;
+}
+
+.woc-oauth-login .oauth-btn--google,
+.woc-oauth-login .oauth-btn--microsoft {
+    background: #fff;
+    color: #1d2327;
+}

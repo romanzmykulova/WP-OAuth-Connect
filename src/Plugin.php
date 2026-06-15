@@ -13,6 +13,7 @@ use WpOAuthConnect\BindPrompt\BindPromptStore;
 use WpOAuthConnect\Hooks\AdminHooks;
 use WpOAuthConnect\Hooks\CustomProviderHooks;
 use WpOAuthConnect\Hooks\LoginButtonsHooks;
+use WpOAuthConnect\Hooks\LoginFormHooks;
 use WpOAuthConnect\Hooks\NativeLoginHooks;
 use WpOAuthConnect\Hooks\OAuthHooks;
 use WpOAuthConnect\Hooks\RoutingHooks;
@@ -42,6 +43,7 @@ final class Plugin
         (new CustomProviderHooks())->register();
         (new RoutingHooks($oauthHooks))->register();
         (new LoginButtonsHooks())->register();
+        (new LoginFormHooks($pluginFile))->register();
         (new NativeLoginHooks())->register();
 
         \add_action('init', [Migrator::class, 'run'], 5);

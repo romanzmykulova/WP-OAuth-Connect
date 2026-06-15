@@ -17,6 +17,32 @@ wire up to your own app.
 
 ---
 
+## Works out of the box
+
+Activate the plugin, add one provider's Client ID/Secret on **Settings → OAuth
+Connect**, enable it — and **"Continue with …" buttons appear on the standard
+WordPress login screen automatically.** No companion plugin, no theme edits, no
+shortcode.
+
+![Native wp-login.php with OAuth buttons](docs/img/native-login.png)
+
+The buttons are rendered through WordPress's own login-form hooks
+(`login_form` + `login_enqueue_scripts`), **not** by sniffing the request URL.
+That means they keep working when the login page is moved off `wp-login.php` by
+**WPS Hide Login**, a custom login slug, or any mu-plugin that relocates the
+form — those serve the genuine `wp-login.php`, which still fires these hooks
+wherever it is mounted. The `/oauth/*` routes are rewrite rules and are likewise
+independent of the login URL.
+
+A companion plugin that renders its own login UI can suppress the built-in
+buttons with one filter:
+
+```php
+add_filter('woc_oauth_render_login_form', '__return_false');
+```
+
+---
+
 ## How it plugs into native WordPress login
 
 WP OAuth Connect does **not** replace WordPress authentication — it *feeds* it.
@@ -145,25 +171,38 @@ foreach ($buttons as $button) {
 }
 ```
 
-### 2. Drop the buttons onto the native `wp-login.php` screen
+### 2. The native `wp-login.php` screen — already done
 
-Because OAuth sign-in ends in a standard WP session, you can surface it right on
-core's login form with the native `login_form` hook — no custom login page
-required:
+You don't need to wire anything here: the core renders the operational provider
+buttons on `wp-login.php` for you (see [Works out of the box](#works-out-of-the-box)).
+Your jobs are only to (a) opt out if you render your own login UI, and/or (b)
+restyle:
 
 ```php
-add_action('login_form', function (): void {
-    foreach (oauth_providers() as $provider) {
-        if ($provider['enabled']) {
-            printf(
-                '<a class="oauth-btn oauth-btn--%1$s" href="%2$s">%3$s</a>',
-                esc_attr($provider['slug']),
-                esc_url(oauth_start_url($provider['slug'])),
-                esc_html(sprintf(__('Sign in with %s', 'your-plugin'), $provider['label']))
-            );
-        }
+// (a) Suppress the built-in buttons because your plugin renders its own.
+add_filter('woc_oauth_render_login_form', '__return_false');
+
+// (b) Keep the buttons but drop the shipped CSS and style them yourself.
+add_action('login_enqueue_scripts', function (): void {
+    wp_dequeue_style('woc-oauth-login');
+}, 20);
+```
+
+If you *do* render your own login surface (a custom page, a widget, a block),
+build it from the same public helpers:
+
+```php
+foreach (oauth_providers() as $provider) {
+    if (!$provider['enabled']) {
+        continue;
     }
-});
+    printf(
+        '<a class="oauth-btn oauth-btn--%1$s" href="%2$s">%3$s</a>',
+        esc_attr($provider['slug']),
+        esc_url(oauth_start_url($provider['slug'])),
+        esc_html(sprintf(__('Sign in with %s', 'your-plugin'), $provider['label']))
+    );
+}
 ```
 
 ### 3. Decide who is allowed to register, and how the user is built

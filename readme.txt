@@ -13,6 +13,13 @@ Thin OAuth plumbing: provider engines, /oauth/{provider}/start|callback routes,
 HMAC-signed state, account linking, and a documented hook contract (woc_*).
 Registration policy and login UI stay in companion application plugins.
 
+Works out of the box: activate it, configure one provider, and "Continue with …"
+buttons appear on the standard WordPress login screen with no companion plugin or
+theme code. The buttons hook the login-form render events (not the URL), so they
+keep working when the login path is relocated by WPS Hide Login, a custom slug,
+or a login-rename mu-plugin. A single filter (woc_oauth_render_login_form) lets a
+companion suppress them in favour of its own UI.
+
 A successful sign-in logs the member in with standard WordPress auth cookies
 (wp_set_auth_cookie), so an OAuth session is identical to a wp-login.php
 password session — roles, capabilities and is_user_logged_in() all behave the

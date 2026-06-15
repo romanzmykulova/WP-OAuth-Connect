@@ -69,6 +69,7 @@ Enable: `woc_oauth_okta-acme_enabled` option (admin → Settings → OAuth Conne
 | `woc_oauth_create_user` | Companion creates user; `null` = minimal WP user |
 | `woc_oauth_redirect_url` | Post-auth redirect |
 | `woc_oauth_native_login_enabled` | Native login toggle |
+| `woc_oauth_render_login_form` | **Default `true`** — render OAuth buttons on the native wp-login.php form. Return false when a companion renders its own login UI |
 | `woc_oauth_login_buttons` | Login UI button list |
 | `woc_oauth_bind_prompt_message` | BIND-PROMPT copy |
 | `woc_oauth_reject_message` | Callback rejection copy |
