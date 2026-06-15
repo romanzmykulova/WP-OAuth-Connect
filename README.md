@@ -404,6 +404,16 @@ the 403 rejection page.
 
 ---
 
+## Translations
+
+Every user-facing string uses the `wp-oauth-connect` text domain, loaded on
+`init`. A translation template ships at
+[`languages/wp-oauth-connect.pot`](languages/wp-oauth-connect.pot); drop
+`wp-oauth-connect-{locale}.mo` next to it (or in
+`wp-content/languages/plugins/`) to localise. Built-in provider button labels
+("Continue with GitHub", …) are translatable; internal exception and log
+messages are intentionally left untranslated.
+
 ## Hook reference
 
 The full filter/action contract — including the custom-provider recipe and the

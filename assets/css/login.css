@@ -59,6 +59,15 @@
 
 .woc-oauth-login .oauth-btn__icon {
     display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.woc-oauth-login .oauth-btn__icon svg {
+    display: block;
     width: 18px;
     height: 18px;
 }

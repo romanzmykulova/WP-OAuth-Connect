@@ -1,0 +1,296 @@
+# Copyright (C) 2026 RemoteJobs.team
+# This file is distributed under the Proprietary.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP OAuth Connect 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-oauth-connect\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-06-15T18:36:34+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: wp-oauth-connect\n"
+
+#. Plugin Name of the plugin
+#: wp-oauth-connect.php
+msgid "WP OAuth Connect"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: wp-oauth-connect.php
+msgid "https://remotejobs.team"
+msgstr ""
+
+#. Description of the plugin
+#: wp-oauth-connect.php
+msgid "Generic OAuth transport + identity-linking layer — providers, routes, CSRF state, account linking, hook API."
+msgstr ""
+
+#. Author of the plugin
+#: wp-oauth-connect.php
+msgid "RemoteJobs.team"
+msgstr ""
+
+#: src/BindPrompt/BindPromptHandler.php:38
+#: src/BindPrompt/BindPromptHandler.php:84
+msgid "An account with this email already exists. Sign in with your password to link your OAuth identity."
+msgstr ""
+
+#: src/BindPrompt/BindPromptHandler.php:72
+msgid "Password is required."
+msgstr ""
+
+#: src/BindPrompt/BindPromptHandler.php:128
+msgid "Bind prompt template is missing."
+msgstr ""
+
+#: src/BindPrompt/BindPromptHandler.php:129
+#: src/Hooks/OAuthHooks.php:47
+#: src/Hooks/OAuthHooks.php:69
+msgid "OAuth unavailable"
+msgstr ""
+
+#: src/BindPrompt/BindPromptHandler.php:142
+msgid "This link has expired. Start OAuth sign-in again from the login page."
+msgstr ""
+
+#: src/BindPrompt/BindPromptHandler.php:146
+msgid "Link expired"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:25
+#: src/Hooks/AdminHooks.php:26
+#: src/Hooks/AdminHooks.php:189
+msgid "OAuth Connect"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:195
+msgid "OAUTH_STATE_KEY is ready. Enter each provider's Client ID and Client Secret below (from your LinkedIn / Google / GitHub developer app), then enable the provider."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:206
+msgid "Could not write OAUTH_STATE_KEY to wp-config.php automatically. Paste the following line into wp-config.php before the \"That's all, stop editing!\" comment, then reload this page."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:214
+msgid "File:"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:225
+msgid "Providers"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:228
+msgid "The state signing key is separate from provider credentials. Each provider needs an OAuth app registered with the callback URL shown below."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:252
+#: src/Hooks/AdminHooks.php:483
+msgid "Callback URL:"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:259
+msgid "Credentials are locked via wp-config.php constants for this provider."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:281
+#: src/Hooks/AdminHooks.php:574
+msgid "Client ID"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:298
+#: src/Hooks/AdminHooks.php:589
+msgid "Client Secret"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:314
+msgid "Leave blank to keep the current secret."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:334
+msgid "Enable this provider on login and join pages"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:339
+msgid "Save a Client ID and Client Secret first — the enable checkbox unlocks after that."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:351
+msgid "Login button order"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:354
+msgid "Provider slugs (comma-separated)"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:367
+msgid "Controls the order of OAuth buttons on login and join pages. Use slug custom for the custom provider below. Only operational providers appear."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:374
+msgid "Login mode"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:384
+msgid "Allow native login (email/password and magic link) alongside OAuth"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:392
+msgid "Companion plugins may hide their native login forms when this is off."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:468
+msgid "Custom provider (OIDC)"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:471
+msgid "One extra OIDC identity provider (Okta, Auth0, Keycloak, corporate SSO). Slug is always custom — include custom in the button order field above."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:479
+msgid "Custom"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:489
+msgid "Button label"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:498
+msgid "Continue with Acme SSO"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:504
+msgid "Icon text"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:517
+msgid "Short text or emoji shown in the button icon circle (max 3 characters)."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:523
+msgid "Icon HTML (optional)"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:535
+msgid "Inline SVG or small HTML for the icon. Overrides icon text when set. Allowed tags: span, svg, path, img."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:545
+msgid "OIDC issuer URL"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:560
+msgid "Scopes"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:612
+msgid "Enable custom provider on login and join pages"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:617
+msgid "Fill in button label, OIDC issuer URL, Client ID, and Client Secret — then save before enabling."
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:631
+msgid "Credentials not configured"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:632
+msgid "Configured, disabled"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:633
+msgid "Ready"
+msgstr ""
+
+#: src/Hooks/AdminHooks.php:634
+msgid "Unknown"
+msgstr ""
+
+#: src/Hooks/LoginButtonsHooks.php:140
+msgid "Continue with GitHub"
+msgstr ""
+
+#: src/Hooks/LoginButtonsHooks.php:141
+msgid "Continue with Google"
+msgstr ""
+
+#: src/Hooks/LoginButtonsHooks.php:142
+msgid "Continue with LinkedIn"
+msgstr ""
+
+#: src/Hooks/LoginButtonsHooks.php:143
+msgid "Continue with Microsoft"
+msgstr ""
+
+#: src/Hooks/LoginFormHooks.php:56
+msgid "or"
+msgstr ""
+
+#: src/Hooks/NativeLoginHooks.php:41
+msgid "Native login is handled by the companion application plugin."
+msgstr ""
+
+#: src/Hooks/OAuthHooks.php:46
+msgid "Missing bind token."
+msgstr ""
+
+#. translators: %s: provider slug
+#: src/Hooks/OAuthHooks.php:66
+#, php-format
+msgid "OAuth provider \"%s\" is not enabled or configured."
+msgstr ""
+
+#: src/OAuthService.php:202
+msgid "OAuth sign-in could not be completed. Missing authorization data."
+msgstr ""
+
+#: src/OAuthService.php:203
+msgid "OAuth sign-in expired. Please try again."
+msgstr ""
+
+#: src/OAuthService.php:204
+msgid "OAuth sign-in could not be verified. Please try again."
+msgstr ""
+
+#: src/OAuthService.php:205
+msgid "This OAuth account is not linked to a member account and sign-up is not allowed."
+msgstr ""
+
+#: src/OAuthService.php:209
+msgid "Account creation failed. Please contact support."
+msgstr ""
+
+#: src/OAuthService.php:210
+msgid "OAuth sign-in failed. Please try again."
+msgstr ""
+
+#: src/OAuthService.php:217
+msgid "OAuth sign-in failed"
+msgstr ""
+
+#: templates/bind-prompt.php:25
+msgid "Link OAuth account"
+msgstr ""
+
+#: templates/bind-prompt.php:37
+msgid "Confirm your account"
+msgstr ""
+
+#. translators: %s: email address
+#: templates/bind-prompt.php:47
+#, php-format
+msgid "Sign in as %s to link your %s account."
+msgstr ""
+
+#: templates/bind-prompt.php:54
+msgid "Password"
+msgstr ""
+
+#: templates/bind-prompt.php:56
+msgid "Link account"
+msgstr ""

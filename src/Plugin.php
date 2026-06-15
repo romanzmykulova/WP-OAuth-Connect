@@ -47,6 +47,13 @@ final class Plugin
         (new NativeLoginHooks())->register();
 
         \add_action('init', [Migrator::class, 'run'], 5);
+        \add_action('init', static function () use ($pluginFile): void {
+            \load_plugin_textdomain(
+                'wp-oauth-connect',
+                false,
+                \dirname(\plugin_basename($pluginFile)) . '/languages',
+            );
+        }, 1);
     }
 
     public static function registry(): ProviderRegistry

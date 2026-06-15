@@ -12,6 +12,7 @@ use WpOAuthConnect\Options\Settings;
 use WpOAuthConnect\Plugin;
 use WpOAuthConnect\Provider\Provider;
 use WpOAuthConnect\Provider\ProviderRegistry;
+use WpOAuthConnect\Support\ProviderIcons;
 
 final class LoginButtonsHooks
 {
@@ -116,15 +117,31 @@ final class LoginButtonsHooks
         $slug = $provider->slug();
         $button = [
             'provider'  => $slug,
-            'label'     => $provider->label(),
+            'label'     => self::translatedLabel($provider),
             'url'       => \oauth_start_url($slug, $context),
             'css_class' => 'oauth-btn oauth-btn--' . $slug,
             'enabled'   => true,
-            'icon_html' => '',
+            'icon_html' => ProviderIcons::for($slug),
         ];
 
         /** @var array<string, mixed> $filtered */
         $filtered = \apply_filters('woc_oauth_provider_button', $button, $provider);
         return $filtered;
+    }
+
+    /**
+     * Translatable button labels for the built-in providers. Literal __() calls
+     * keep the strings extractable; non-built-in providers (e.g. the admin
+     * custom slot) fall back to their definition label.
+     */
+    private static function translatedLabel(Provider $provider): string
+    {
+        return match ($provider->slug()) {
+            'github'    => \__('Continue with GitHub', 'wp-oauth-connect'),
+            'google'    => \__('Continue with Google', 'wp-oauth-connect'),
+            'linkedin'  => \__('Continue with LinkedIn', 'wp-oauth-connect'),
+            'microsoft' => \__('Continue with Microsoft', 'wp-oauth-connect'),
+            default     => $provider->label(),
+        };
     }
 }
